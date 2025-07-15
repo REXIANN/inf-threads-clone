@@ -7,7 +7,7 @@ export default function TabLayout() {
   return (
     <Tabs screenOptions={{ headerShown: false }}>
       <Tabs.Screen
-        name="index"
+        name="(home)"
         options={{
           tabBarLabel: () => null,
           tabBarIcon: ({ focused }) => (
@@ -17,6 +17,13 @@ export default function TabLayout() {
               color={focused ? "black" : "gray"}
             />
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="following"
+        options={{
+          tabBarLabel: () => null,
+          href: null,
         }}
       />
       <Tabs.Screen
@@ -71,6 +78,12 @@ export default function TabLayout() {
               color={focused ? "black" : "gray"}
             />
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="(post)/[username]/post/[postID]"
+        options={{
+          href: null,
         }}
       />
     </Tabs>
