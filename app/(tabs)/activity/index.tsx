@@ -7,7 +7,7 @@ export default function Activity() {
   const pathname = usePathname();
 
   if (
-    [
+    ![
       "/activity",
       "/activity/follows",
       "/activity/replies",
