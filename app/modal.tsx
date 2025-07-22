@@ -1,9 +1,12 @@
 import { FontAwesome, Ionicons } from "@expo/vector-icons";
+import * as Location from "expo-location";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
+  Alert,
   FlatList,
   Image,
+  Linking,
   Pressable,
   StyleSheet,
   Text,
@@ -64,7 +67,45 @@ export default function Modal() {
 
   const removeImageFromThread = (id: string, uriToRemove: string) => {};
 
-  const getMyLocation = async (id: string) => {};
+  const getMyLocation = async (id: string) => {
+    let { status } = await Location.requestForegroundPermissionsAsync();
+
+    if (status !== "granted") {
+      Alert.alert(
+        "Location permission not granted",
+        "Please grant location permission to use this feature.",
+        [
+          {
+            text: "Open settings",
+            onPress: () => {
+              // open preferences.
+              Linking.openSettings();
+            },
+          },
+          { text: "Cancel" },
+        ]
+      );
+      return;
+    }
+
+    const location = await Location.getCurrentPositionAsync({});
+    const address = await Location.reverseGeocodeAsync({
+      latitude: location.coords.latitude,
+      longitude: location.coords.longitude,
+    });
+    console.log({ address });
+
+    setThreads((prevThreads) =>
+      prevThreads.map((prevThread) =>
+        prevThread.id === id
+          ? {
+              ...prevThread,
+              location: [location.coords.latitude, location.coords.longitude],
+            }
+          : prevThread
+      )
+    );
+  };
 
   const renderThreadItem = ({
     item,
