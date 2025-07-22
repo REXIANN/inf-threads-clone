@@ -1,5 +1,7 @@
 import { FontAwesome, Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
+import * as MediaLibrary from "expo-media-library";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
@@ -48,8 +50,12 @@ export default function Modal() {
     );
   };
 
-  const canAddThread = (threads.at(-1)?.text.trim().length ?? 0) > 0;
-  const canPost = threads.every((thread) => thread.text.trim().length > 0);
+  const canAddThread =
+    (threads.at(-1)?.text.trim().length ?? 0) > 0 ||
+    (threads.at(-1)?.imageUris.length ?? 0) > 0;
+  const canPost = threads.every(
+    (thread) => thread.text.trim().length > 0 || thread.imageUris.length > 0
+  );
 
   const addImageToThread = (id: string, uri: string) => {};
 
@@ -61,11 +67,110 @@ export default function Modal() {
     );
   };
 
-  const pickImage = async (id: string) => {};
+  const pickImage = async (id: string) => {
+    let { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-  const takePhoto = async (id: string) => {};
+    if (status !== "granted") {
+      Alert.alert(
+        "Camera permission not granted",
+        "Please grant location permission to use this feature.",
+        [
+          {
+            text: "Open settings",
+            onPress: () => {
+              Linking.openSettings();
+            },
+          },
+          { text: "Cancel" },
+        ]
+      );
+      return;
+    }
 
-  const removeImageFromThread = (id: string, uriToRemove: string) => {};
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images", "livePhotos", "videos"],
+      allowsMultipleSelection: true,
+      selectionLimit: 5,
+    });
+
+    if (!result.canceled) {
+      setThreads((prevThreads) =>
+        prevThreads.map((prevThread) =>
+          prevThread.id === id
+            ? {
+                ...prevThread,
+                imageUris: prevThread.imageUris.concat(
+                  (result.assets ?? []).map((asset) => asset.uri)
+                ),
+              }
+            : prevThread
+        )
+      );
+    }
+  };
+
+  const takePhoto = async (id: string) => {
+    let { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (status !== "granted") {
+      Alert.alert(
+        "Camera permission not granted",
+        "Please grant location permission to use this feature.",
+        [
+          {
+            text: "Open settings",
+            onPress: () => {
+              Linking.openSettings();
+            },
+          },
+          { text: "Cancel" },
+        ]
+      );
+      return;
+    }
+
+    let result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ["images", "livePhotos", "videos"],
+      allowsMultipleSelection: true,
+      selectionLimit: 5,
+    });
+
+    let { status: mediaStatus } = await MediaLibrary.requestPermissionsAsync();
+
+    if (mediaStatus === "granted" && !!result.assets?.[0].uri) {
+      await MediaLibrary.saveToLibraryAsync(result.assets?.[0].uri);
+    }
+
+    if (!result.canceled) {
+      setThreads((prevThreads) =>
+        prevThreads.map((prevThread) =>
+          prevThread.id === id
+            ? {
+                ...prevThread,
+                imageUris: prevThread.imageUris.concat(
+                  (result.assets ?? []).map((asset) => asset.uri)
+                ),
+              }
+            : prevThread
+        )
+      );
+    }
+  };
+
+  const removeImageFromThread = (id: string, uriToRemove: string) => {
+    setThreads((prevThreads) =>
+      prevThreads.map((prevThread) =>
+        prevThread.id === id
+          ? {
+              ...prevThread,
+              imageUris: prevThread.imageUris.filter(
+                (uri) => uri !== uriToRemove
+              ),
+            }
+          : prevThread
+      )
+    );
+  };
 
   const getMyLocation = async (id: string) => {
     let { status } = await Location.requestForegroundPermissionsAsync();
