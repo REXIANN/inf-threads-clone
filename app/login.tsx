@@ -1,21 +1,15 @@
 import { Redirect, router } from "expo-router";
+import { useContext } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { AuthContext } from "./_layout";
 
 export default function Login() {
   const insets = useSafeAreaInsets();
 
-  const isLoggedIn = false;
+  const { login, user } = useContext(AuthContext);
 
-  const onLogin = () => {
-    fetch("/login", {
-      method: "POST",
-      body: JSON.stringify({
-        username: "kjh",
-        password: "1234",
-      }),
-    });
-  };
+  const isLoggedIn = !!user;
 
   if (isLoggedIn) {
     return <Redirect href="/(tabs)" />;
@@ -26,7 +20,7 @@ export default function Login() {
       <Pressable onPress={() => router.back()}>
         <Text>Back</Text>
       </Pressable>
-      <Pressable onPress={onLogin}>
+      <Pressable onPress={login}>
         <Text>Login</Text>
       </Pressable>
     </View>

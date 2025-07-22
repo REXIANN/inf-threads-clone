@@ -25,6 +25,9 @@ if (__DEV__) {
             refershToken: "refresh-token",
             user: {
               id: "kjh",
+              name: "jinhyuck",
+              description: "programmer",
+              profileImage: "https://github.com/REXIANN",
             },
           };
         }
