@@ -1,44 +1,49 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Stack, useRouter } from "expo-router";
+import { Stack } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import { createContext, useEffect, useState } from "react";
 import { Alert } from "react-native";
 
-interface User {
+export interface User {
   id: string;
   name: string;
   profileImageUrl: string;
   description: string;
+  link?: string;
+  showInstagramBadge?: boolean;
+  isPrivate?: boolean;
 }
 
 export const AuthContext = createContext<{
-  user?: User | null;
-  login?: () => void;
-  logout?: () => void;
-}>({});
+  user: User | null;
+  login?: () => Promise<any>;
+  logout?: () => Promise<any>;
+  updateUser?: (user: User) => void;
+}>({
+  user: null,
+});
 
 export default function RootLayout() {
-  const router = useRouter();
-
   const [user, setUser] = useState<User | null>(null);
 
   const login = () => {
+    console.log("login");
     return fetch("/login", {
       method: "POST",
       body: JSON.stringify({
-        username: "kjh",
+        username: "zerocho",
         password: "1234",
       }),
     })
       .then((res) => {
+        console.log("res", res, res.status);
         if (res.status >= 400) {
-          return Alert.alert("Error", "Invalid Credentials");
+          return Alert.alert("Error", "Invalid credentials");
         }
-
         return res.json();
       })
       .then((data) => {
-        console.log("data: ", data);
+        console.log("data", data);
         setUser(data.user);
         return Promise.all([
           SecureStore.setItemAsync("accessToken", data.accessToken),
@@ -46,10 +51,7 @@ export default function RootLayout() {
           AsyncStorage.setItem("user", JSON.stringify(data.user)),
         ]);
       })
-      .then(() => {
-        router.push("/(tabs)");
-      })
-      .catch((error) => console.error(error));
+      .catch(console.error);
   };
 
   const logout = () => {
@@ -61,14 +63,20 @@ export default function RootLayout() {
     ]);
   };
 
+  const updateUser = (user: User) => {
+    setUser(user);
+    AsyncStorage.setItem("user", JSON.stringify(user));
+  };
+
   useEffect(() => {
     AsyncStorage.getItem("user").then((user) => {
-      setUser(!!user ? JSON.parse(user) : null);
+      setUser(user ? JSON.parse(user) : null);
     });
+    // TODO: validating access token
   }, []);
 
   return (
-    <AuthContext value={{ user, login, logout }}>
+    <AuthContext value={{ user, login, logout, updateUser }}>
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="modal" options={{ presentation: "modal" }} />
