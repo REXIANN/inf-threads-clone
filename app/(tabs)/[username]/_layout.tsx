@@ -16,6 +16,7 @@ import { useContext, useState } from "react";
 import {
   Image,
   Pressable,
+  Share,
   StyleSheet,
   Text,
   View,
@@ -49,6 +50,9 @@ export default function TabLayout() {
 
   const handleShareProfile = () => {
     console.log("share profile");
+    Share.share({
+      message: `thread://@${username}`,
+    });
   };
 
   return (
