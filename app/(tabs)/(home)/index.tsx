@@ -1,77 +1,99 @@
-import { AuthContext } from "@/app/_layout";
+import SideMenu from "@/components/SideMenu";
+import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { usePathname, useRouter } from "expo-router";
-import { useContext } from "react";
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useContext, useState } from "react";
 import {
-  SafeAreaView,
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { AuthContext } from "../../_layout";
 
 export default function Index() {
   const router = useRouter();
   const pathname = usePathname();
-
-  const { user } = useContext(AuthContext);
-
   const insets = useSafeAreaInsets();
-
+  const [isSideMenuOpen, setIsSideMenuOpen] = useState(false);
+  const { user, logout } = useContext(AuthContext);
   const isLoggedIn = !!user;
 
-  console.log({ pathname });
-
   return (
-    <SafeAreaView style={[styles.container, { paddingTop: insets.top }]}>
+    <View
+      style={[
+        styles.container,
+        { paddingTop: insets.top, paddingBottom: insets.bottom },
+      ]}
+    >
       <BlurView style={styles.header} intensity={70}>
+        {isLoggedIn && (
+          <Pressable
+            style={styles.menuButton}
+            onPress={() => {
+              setIsSideMenuOpen(true);
+            }}
+          >
+            <Ionicons name="menu" size={24} color="black" />
+          </Pressable>
+        )}
+        <SideMenu
+          isVisible={isSideMenuOpen}
+          onClose={() => setIsSideMenuOpen(false)}
+        />
         <Image
+          source={require("../../../assets/images/react-logo.png")}
           style={styles.headerLogo}
-          source={require("@/assets/images/react-logo.png")}
         />
         {!isLoggedIn && (
           <TouchableOpacity
             style={styles.loginButton}
-            onPress={() => router.push("/")}
+            onPress={() => {
+              console.log("loginButton onPress");
+              router.navigate(`/login`);
+            }}
           >
             <Text style={styles.loginButtonText}>로그인</Text>
           </TouchableOpacity>
         )}
       </BlurView>
-      <View style={styles.tabContainer}>
-        {isLoggedIn && (
-          <>
-            <View>
-              <TouchableOpacity onPress={() => router.push("/")}>
-                <Text style={{ color: pathname === "/" ? "red" : "black" }}>
-                  For You{" "}
-                </Text>
-              </TouchableOpacity>
-            </View>
-            <View>
-              <TouchableOpacity onPress={() => router.push("/following")}>
-                <Text style={{ color: pathname === "/" ? "black" : "red" }}>
-                  Following
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </>
-        )}
-        <View>
-          <TouchableOpacity onPress={() => router.push("/@zerocho/post/1")}>
-            <Text>Post 1</Text>
-          </TouchableOpacity>
+      {isLoggedIn && (
+        <View style={styles.tabContainer}>
+          <View style={styles.tab}>
+            <TouchableOpacity onPress={() => router.navigate(`/`)}>
+              <Text style={{ color: pathname === "/" ? "red" : "black" }}>
+                For you
+              </Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.tab}>
+            <TouchableOpacity onPress={() => router.navigate(`/following`)}>
+              <Text style={{ color: pathname === "/" ? "black" : "red" }}>
+                Following
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
-        <View>
-          <TouchableOpacity onPress={() => router.push("/@zerocho/post/2")}>
-            <Text>Post 2</Text>
-          </TouchableOpacity>
-        </View>
-        <View>
-          <TouchableOpacity onPress={() => router.push("/@zerocho/post/3")}>
-            <Text>Post 3</Text>
-          </TouchableOpacity>
-        </View>
+      )}
+      <View>
+        <TouchableOpacity onPress={() => router.push(`/@zerocho/post/1`)}>
+          <Text>게시글1</Text>
+        </TouchableOpacity>
       </View>
-    </SafeAreaView>
+      <View>
+        <TouchableOpacity onPress={() => router.push(`/@zerocho/post/2`)}>
+          <Text>게시글2</Text>
+        </TouchableOpacity>
+      </View>
+      <View>
+        <TouchableOpacity onPress={() => router.push(`/@zerocho/post/3`)}>
+          <Text>게시글3</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 }
 
@@ -84,18 +106,19 @@ const styles = StyleSheet.create({
   },
   tab: {
     flex: 1,
+    alignItems: "center",
   },
   header: {
     alignItems: "center",
   },
   headerLogo: {
-    width: 42,
+    width: 42, // DP, DIP
     height: 42,
   },
   loginButton: {
     position: "absolute",
-    top: 0,
     right: 20,
+    top: 0,
     backgroundColor: "black",
     borderWidth: 1,
     borderColor: "black",
@@ -105,5 +128,10 @@ const styles = StyleSheet.create({
   },
   loginButtonText: {
     color: "white",
+  },
+  menuButton: {
+    position: "absolute",
+    left: 20,
+    top: 10,
   },
 });

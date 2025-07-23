@@ -1,11 +1,18 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Stack, useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
-import { createContext, useState } from "react";
+import { createContext, useEffect, useState } from "react";
 import { Alert } from "react-native";
 
+interface User {
+  id: string;
+  name: string;
+  profileImageUrl: string;
+  description: string;
+}
+
 export const AuthContext = createContext<{
-  user?: object | null;
+  user?: User | null;
   login?: () => void;
   logout?: () => void;
 }>({});
@@ -13,7 +20,7 @@ export const AuthContext = createContext<{
 export default function RootLayout() {
   const router = useRouter();
 
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<User | null>(null);
 
   const login = () => {
     return fetch("/login", {
@@ -24,7 +31,6 @@ export default function RootLayout() {
       }),
     })
       .then((res) => {
-        console.log("RESPONSE: ", res);
         if (res.status >= 400) {
           return Alert.alert("Error", "Invalid Credentials");
         }
@@ -54,6 +60,12 @@ export default function RootLayout() {
       AsyncStorage.removeItem("user"),
     ]);
   };
+
+  useEffect(() => {
+    AsyncStorage.getItem("user").then((user) => {
+      setUser(!!user ? JSON.parse(user) : null);
+    });
+  }, []);
 
   return (
     <AuthContext value={{ user, login, logout }}>

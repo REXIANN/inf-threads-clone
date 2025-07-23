@@ -27,7 +27,7 @@ if (__DEV__) {
               id: "kjh",
               name: "jinhyuck",
               description: "programmer",
-              profileImage: "https://github.com/REXIANN",
+              profileImageUrl: "https://github.com/REXIANN",
             },
           };
         }
