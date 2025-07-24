@@ -11,7 +11,7 @@ import {
   RestSerializer,
   Server,
 } from "miragejs";
-import { type User } from "./app/_layout";
+import { User } from "./app/_layout";
 
 declare global {
   interface Window {
@@ -101,7 +101,12 @@ if (__DEV__) {
       });
 
       this.get("/posts", (schema, request) => {
-        const posts = schema.all("post");
+        let posts = schema.all("post");
+
+        if (request.queryParams.type === "following") {
+          posts = posts.filter((post) => post.user?.id === kjh?.id);
+        }
+
         const targetIndex = posts.models.findIndex(
           (v) => v.id === request.queryParams.cursor
         );
