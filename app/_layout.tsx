@@ -114,7 +114,6 @@ function AnimatedAppLoader({
   const [isSplashReady, setIsSplashReady] = useState(false);
 
   const login = () => {
-    console.log("login");
     return fetch("/login", {
       method: "POST",
       body: JSON.stringify({
@@ -123,14 +122,12 @@ function AnimatedAppLoader({
       }),
     })
       .then((res) => {
-        console.log("res", res, res.status);
         if (res.status >= 400) {
           return Alert.alert("Error", "Invalid credentials");
         }
         return res.json();
       })
       .then((data) => {
-        console.log("data", data);
         setUser(data.user);
         return Promise.all([
           SecureStore.setItemAsync("accessToken", data.accessToken),

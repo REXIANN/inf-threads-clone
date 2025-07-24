@@ -49,7 +49,6 @@ export default function TabLayout() {
   const handleCloseEditModal = () => setIsEditModalVisible(false);
 
   const handleShareProfile = () => {
-    console.log("share profile");
     Share.share({
       message: `thread://@${username}`,
     });

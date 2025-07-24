@@ -130,7 +130,6 @@ export default function TabLayout() {
           name="add"
           listeners={{
             tabPress: (e) => {
-              console.log("tabPress");
               e.preventDefault();
               if (isLoggedIn) {
                 router.navigate("/modal");

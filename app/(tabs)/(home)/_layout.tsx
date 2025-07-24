@@ -85,7 +85,6 @@ export default function TabLayout() {
                 : styles.loginButtonLight,
             ]}
             onPress={() => {
-              console.log("loginButton onPress");
               router.navigate(`/login`);
             }}
           >

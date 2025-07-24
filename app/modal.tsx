@@ -115,7 +115,6 @@ export default function Modal() {
       allowsMultipleSelection: true,
       selectionLimit: 5,
     });
-    console.log("image result", result);
     if (!result.canceled) {
       setThreads((prevThreads) =>
         prevThreads.map((thread) =>
@@ -152,7 +151,6 @@ export default function Modal() {
       allowsMultipleSelection: true,
       selectionLimit: 5,
     });
-    console.log("camera result", result);
     status = (await MediaLibrary.requestPermissionsAsync()).status;
     if (status === "granted" && result.assets?.[0].uri) {
       MediaLibrary.saveToLibraryAsync(result.assets[0].uri);
@@ -189,7 +187,6 @@ export default function Modal() {
 
   const getMyLocation = async (id: string) => {
     let { status } = await Location.requestForegroundPermissionsAsync();
-    console.log("getMyLocation", status);
     if (status !== "granted") {
       Alert.alert(
         "Location permission not granted",

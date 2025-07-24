@@ -101,10 +101,11 @@ if (__DEV__) {
       });
 
       this.get("/posts", (schema, request) => {
-        console.log("user.all", schema.all("user").models);
-        const cursor = parseInt((request.queryParams.cursor as string) || "0");
-        const posts = schema.all("post").models.slice(cursor, cursor + 10);
-        return new Response(200, {}, { posts });
+        const posts = schema.all("post");
+        const targetIndex = posts.models.findIndex(
+          (v) => v.id === request.queryParams.cursor
+        );
+        return schema.all("post").slice(targetIndex + 1, targetIndex + 11);
       });
 
       this.get("/posts/:id", (schema, request) => {
