@@ -117,17 +117,19 @@ function AnimatedAppLoader({
     return fetch("/login", {
       method: "POST",
       body: JSON.stringify({
-        username: "zerocho",
+        username: "kjh",
         password: "1234",
       }),
     })
       .then((res) => {
+        console.log("result", res);
         if (res.status >= 400) {
           return Alert.alert("Error", "Invalid credentials");
         }
         return res.json();
       })
       .then((data) => {
+        console.log("data.user: ", data.user);
         setUser(data.user);
         return Promise.all([
           SecureStore.setItemAsync("accessToken", data.accessToken),

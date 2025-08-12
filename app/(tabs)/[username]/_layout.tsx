@@ -1,4 +1,4 @@
-import { AuthContext } from "@/app/_layout";
+import { AuthContext, User } from "@/app/_layout";
 import EditProfileModal from "@/components/EditProfileModal";
 import SideMenu from "@/components/SideMenu";
 import { Ionicons } from "@expo/vector-icons";
@@ -12,7 +12,7 @@ import type {
   TabNavigationState,
 } from "@react-navigation/native";
 import { useLocalSearchParams, withLayoutContext } from "expo-router";
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import {
   Image,
   Pressable,
@@ -35,11 +35,15 @@ export const MaterialTopTabs = withLayoutContext<
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const insets = useSafeAreaInsets();
-  const [isSideMenuOpen, setIsSideMenuOpen] = useState(false);
-  const { user } = useContext(AuthContext);
-  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
-  const isLoggedIn = !!user;
+
   const { username } = useLocalSearchParams();
+  const { user } = useContext(AuthContext);
+
+  const [isSideMenuOpen, setIsSideMenuOpen] = useState(false);
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [profile, setProfile] = useState<User | null>(null);
+
+  const isLoggedIn = !!user;
   const isOwnProfile = isLoggedIn && user?.id === username?.slice(1);
 
   const handleOpenEditModal = () => {
@@ -53,6 +57,22 @@ export default function TabLayout() {
       message: `thread://@${username}`,
     });
   };
+
+  useEffect(() => {
+    console.log("username", username, `@${user?.id}`);
+
+    if (username !== `@${user?.id}`) {
+      setProfile(null);
+      fetch(`/users/${username}`)
+        .then((res) => res.json())
+        .then((data) => {
+          console.log("fetch user", data);
+          setProfile(data.user);
+        });
+    } else {
+      setProfile(user);
+    }
+  }, [username]);
 
   return (
     <View
@@ -94,7 +114,7 @@ export default function TabLayout() {
       <View style={styles.profile}>
         <View style={styles.profileHeader}>
           <Image
-            source={{ uri: user?.profileImageUrl }}
+            source={{ uri: profile?.profileImageUrl }}
             style={styles.profileAvatar}
           />
           <Text
@@ -105,7 +125,7 @@ export default function TabLayout() {
                 : styles.profileNameLight,
             ]}
           >
-            {user?.name}
+            {profile?.name}
           </Text>
           <Text
             style={[
@@ -115,7 +135,7 @@ export default function TabLayout() {
                 : styles.profileTextLight,
             ]}
           >
-            {user?.id}
+            {profile?.id}
           </Text>
           <Text
             style={[
@@ -124,7 +144,7 @@ export default function TabLayout() {
                 : styles.profileTextLight,
             ]}
           >
-            {user?.description}
+            {profile?.description}
           </Text>
         </View>
         <View style={styles.profileActions}>

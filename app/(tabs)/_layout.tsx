@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { type BottomTabBarButtonProps } from "@react-navigation/bottom-tabs";
-import { Tabs, useRouter } from "expo-router";
+import { Tabs, usePathname, useRouter } from "expo-router";
 import { useContext, useRef, useState } from "react";
 import {
   Animated,
@@ -58,9 +58,12 @@ const AnimatedTabBarButton = ({
 export default function TabLayout() {
   const router = useRouter();
   const { user } = useContext(AuthContext);
-  const isLoggedIn = !!user;
   const colorScheme = useColorScheme();
+  const pathname = usePathname();
+
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+
+  const isLoggedIn = !!user;
 
   const openLoginModal = () => {
     setIsLoginModalOpen(true);
@@ -189,6 +192,8 @@ export default function TabLayout() {
               if (!isLoggedIn) {
                 e.preventDefault();
                 openLoginModal();
+              } else {
+                router.navigate(`/@${user.id}`);
               }
             },
           }}
@@ -199,7 +204,7 @@ export default function TabLayout() {
                 name="person-outline"
                 size={24}
                 color={
-                  focused
+                  focused && user?.id === pathname?.slice(2)
                     ? colorScheme === "dark"
                       ? "white"
                       : "black"

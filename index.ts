@@ -11,7 +11,7 @@ import {
   RestSerializer,
   Server,
 } from "miragejs";
-import { User } from "./app/_layout";
+import { type User } from "./app/_layout";
 
 declare global {
   interface Window {
@@ -19,7 +19,7 @@ declare global {
   }
 }
 
-let kjh: User;
+let zerocho: User;
 
 if (__DEV__) {
   if (window.server) {
@@ -65,7 +65,7 @@ if (__DEV__) {
         content: () => faker.lorem.paragraph(),
         imageUrls: () =>
           Array.from({ length: Math.floor(Math.random() * 3) }, () =>
-            faker.image.urlLoremFlickr()
+            faker.image.urlLoremFlickr({ category: "nature" })
           ),
         likes: () => Math.floor(Math.random() * 100),
         comments: () => Math.floor(Math.random() * 100),
@@ -73,10 +73,10 @@ if (__DEV__) {
       }),
     },
     seeds(server) {
-      kjh = server.create("user", {
-        id: "kjh1",
-        name: "jinhyuck",
-        description: "programmer",
+      zerocho = server.create("user", {
+        id: "zerohch0",
+        name: "ZeroCho",
+        description: "🐢 lover, programmer, youtuber",
         profileImageUrl: "https://avatars.githubusercontent.com/u/885857?v=4",
       });
       const users = server.createList("user", 10);
@@ -87,49 +87,112 @@ if (__DEV__) {
       });
     },
     routes() {
-      this.post("/posts", (schema, request) => {
-        const { posts } = JSON.parse(request.requestBody);
+      this.post("/posts", async (schema, request) => {
+        const formData = request.requestBody as unknown as FormData;
+        const posts: Record<string, string | string[]>[] = [];
+        formData.forEach(async (value, key) => {
+          const match = key.match(/posts\[(\d+)\]\[(\w+)\](\[(\d+)\])?$/);
+          console.log("key", key, match, value);
+          if (match) {
+            const [_, index, field, , imageIndex] = match;
+            const i = parseInt(index);
+            const imgI = parseInt(imageIndex);
+            if (!posts[i]) {
+              posts[i] = {};
+            }
+            if (field === "imageUrls") {
+              if (!posts[i].imageUrls) {
+                posts[i].imageUrls = [] as string[];
+              }
+              (posts[i].imageUrls as string[])[imgI] = (
+                value as unknown as { uri: string }
+              ).uri;
+            } else if (field === "location") {
+              posts[i].location = JSON.parse(value as string);
+            } else {
+              posts[i][field] = value as string;
+            }
+          }
+        });
+        console.log("posts", posts);
+        await new Promise((resolve) => setTimeout(resolve, 3000));
         posts.forEach((post: any) => {
           schema.create("post", {
+            id: post.id,
             content: post.content,
             imageUrls: post.imageUrls,
             location: post.location,
-            user: schema.find("user", "kjh1"),
+            user: schema.find("user", zerocho?.id),
           });
         });
-        return new Response(200, {}, { posts });
+        return posts;
       });
 
       this.get("/posts", (schema, request) => {
+        console.log("request", request.queryParams);
         let posts = schema.all("post");
-
         if (request.queryParams.type === "following") {
-          posts = posts.filter((post) => post.user?.id === kjh?.id);
+          posts = posts.filter((post) => post.user?.id === zerocho?.id);
         }
-
-        const targetIndex = posts.models.findIndex(
-          (v) => v.id === request.queryParams.cursor
-        );
-        return schema.all("post").slice(targetIndex + 1, targetIndex + 11);
+        let targetIndex = -1;
+        if (request.queryParams.cursor) {
+          targetIndex = posts.models.findIndex(
+            (v) => v.id === request.queryParams.cursor
+          );
+        }
+        return posts
+          .sort((a, b) => parseInt(b.id) - parseInt(a.id))
+          .slice(targetIndex + 1, targetIndex + 11);
       });
 
       this.get("/posts/:id", (schema, request) => {
-        const post = schema.find("post", request.params.id);
-        const comments = schema.all("post").models.slice(0, 10);
-        return new Response(200, {}, { post, comments });
+        return schema.find("post", request.params.id);
+      });
+      this.get("/posts/:id/comments", (schema, request) => {
+        const comments = schema.all("post");
+        let targetIndex = -1;
+        if (request.queryParams.cursor) {
+          targetIndex = comments.models.findIndex(
+            (v) => v.id === request.queryParams.cursor
+          );
+        }
+        return comments
+          .sort((a, b) => parseInt(b.id) - parseInt(a.id))
+          .slice(targetIndex + 1, targetIndex + 11);
+      });
+      this.get("/users/:id", (schema, request) => {
+        console.log("request", request.params.id);
+        return schema.find("user", request.params.id.slice(1));
+      });
+
+      this.get("/users/:id/:type", (schema, request) => {
+        console.log("request", request.queryParams);
+        let posts = schema.all("post");
+        if (request.params.type === "threads") {
+          posts = posts.filter((post) => post.user?.id === request.params.id);
+        } else if (request.params.type === "reposts") {
+          posts = posts.filter((post) => post.user?.id !== request.params.id);
+        }
+        let targetIndex = -1;
+        if (request.queryParams.cursor) {
+          targetIndex = posts.models.findIndex(
+            (v) => v.id === request.queryParams.cursor
+          );
+        }
+        return posts.slice(targetIndex + 1, targetIndex + 11);
       });
 
       this.post("/login", (schema, request) => {
         const { username, password } = JSON.parse(request.requestBody);
 
-        if (username === "kjh" && password === "1234") {
+        if (username === "zerocho" && password === "1234") {
           return {
             accessToken: "access-token",
             refreshToken: "refresh-token",
             user: {
-              id: "kjh1",
-              name: "jinhyuck",
-              description: "programmer",
+              id: "zerohch0",
+              name: "ZeroCho",
+              description: "🐢 lover, programmer, youtuber",
               profileImageUrl:
                 "https://avatars.githubusercontent.com/u/885857?v=4",
             },

@@ -1,8 +1,9 @@
-import Post from "@/components/Post";
+import Post, { Post as PostType } from "@/components/Post";
 import SideMenu from "@/components/SideMenu";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { useState } from "react";
+import { FlashList } from "@shopify/flash-list";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect, useState } from "react";
 import {
   Image,
   Pressable,
@@ -20,6 +21,26 @@ export default function PostScreen() {
   const colorScheme = useColorScheme();
   const [isSideMenuOpen, setIsSideMenuOpen] = useState(false);
 
+  const [post, setPost] = useState<PostType | null>(null);
+  const [comments, setComments] = useState<PostType[]>([]);
+
+  const { username, postID } = useLocalSearchParams();
+
+  useEffect(() => {
+    fetch(`/posts/${postID}`)
+      .then((res) => res.json())
+      .then((data) => {
+        console.log("post: ", data);
+        setPost(data.post);
+      });
+
+    fetch(`posts/${postID}/comments`)
+      .then((res) => res.json())
+      .then((data) => {
+        console.log("comments: ", data);
+        setComments(data.posts);
+      });
+  }, []);
   return (
     <View
       style={[
@@ -70,63 +91,27 @@ export default function PostScreen() {
           onClose={() => setIsSideMenuOpen(false)}
         />
       </View>
-      <ScrollView style={styles.scrollView}>
-        <Post
-          item={{
-            id: "1",
-            username: "zerocho",
-            displayName: "Zerocho",
-            content: "Hello, world!",
-            timeAgo: "1 hour ago",
-            likes: 10,
-            comments: 5,
-            reposts: 2,
-            isVerified: true,
-            avatar: "https://randomuser.me/api/portraits/men/1.jpg",
-            image: `https://picsum.photos/800/600?random=${Math.random()}`,
-          }}
-        />
-        <View style={styles.repliesHeader}>
-          <Text
-            style={
-              colorScheme === "dark"
-                ? styles.repliesHeaderDark
-                : styles.repliesHeaderLight
-            }
-          >
-            Replies
-          </Text>
-        </View>
-        <Post
-          item={{
-            id: "2",
-            username: "sarah",
-            displayName: "Sarah",
-            content: "Hello, comment!",
-            timeAgo: "1 hour ago",
-            likes: 10,
-            comments: 5,
-            reposts: 2,
-            isVerified: true,
-            avatar: "https://randomuser.me/api/portraits/women/1.jpg",
-          }}
-        />
-        <Post
-          item={{
-            id: "3",
-            username: "anne",
-            displayName: "Anne",
-            content: "Another comment!",
-            timeAgo: "1 hour ago",
-            likes: 10,
-            comments: 5,
-            reposts: 2,
-            isVerified: true,
-            avatar: "https://randomuser.me/api/portraits/women/2.jpg",
-            image: `https://picsum.photos/800/600?random=${Math.random()}`,
-          }}
-        />
-      </ScrollView>
+      {post && (
+        <ScrollView style={styles.scrollView} nestedScrollEnabled>
+          <Post item={post} />
+          <View style={styles.repliesHeader}>
+            <Text
+              style={
+                colorScheme === "dark"
+                  ? styles.repliesHeaderDark
+                  : styles.repliesHeaderLight
+              }
+            >
+              Replies
+            </Text>
+          </View>
+          <FlashList
+            estimatedItemSize={100}
+            data={comments}
+            renderItem={({ item }) => <Post item={item} />}
+          />
+        </ScrollView>
+      )}
     </View>
   );
 }
