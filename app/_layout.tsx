@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Asset } from "expo-asset";
 import Constants from "expo-constants";
+import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 import { Stack } from "expo-router";
 import * as SecureStore from "expo-secure-store";
@@ -10,7 +11,9 @@ import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { Alert, Animated, Linking, StyleSheet, View } from "react-native";
 import Toast, { BaseToast } from "react-native-toast-message";
 
-SplashScreen.preventAutoHideAsync().catch(() => {});
+SplashScreen.preventAutoHideAsync().catch(() => {
+  /* reloading the app might trigger some race conditions, ignore them */
+});
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -19,6 +22,12 @@ Notifications.setNotificationHandler({
     shouldShowBanner: true,
     shouldShowList: true,
   }),
+  handleSuccess(notificationId) {
+    console.log("handleSuccess", notificationId);
+  },
+  handleError(notificationId, error) {
+    console.log("handleError", notificationId, error);
+  },
 });
 
 export interface User {
@@ -51,6 +60,7 @@ function AnimatedSplashScreen({
   const [isAppReady, setIsAppReady] = useState(false);
   const [isSplashAnimationCompleted, setIsSplashAnimationCompleted] =
     useState(false);
+  const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
 
   const animation = useRef(new Animated.Value(1)).current;
 
@@ -60,18 +70,17 @@ function AnimatedSplashScreen({
         updateUser?.(user ? JSON.parse(user) : null);
       });
       await SplashScreen.hideAsync();
-
       const { status } = await Notifications.requestPermissionsAsync();
       if (status !== "granted") {
         return Linking.openSettings();
       }
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title: "Look at that notification",
-          body: "I am so proud of myself",
-        },
-        trigger: null,
+      const token = await Notifications.getExpoPushTokenAsync({
+        projectId:
+          Constants?.expoConfig?.extra?.eas?.projectId ??
+          Constants?.easConfig?.projectId,
       });
+      console.log("token", token);
+      setExpoPushToken(token.data);
     } catch (error) {
       console.error(error);
     } finally {
@@ -83,6 +92,12 @@ function AnimatedSplashScreen({
     inputRange: [0, 1],
     outputRange: ["0deg", "360deg"],
   });
+
+  useEffect(() => {
+    if (expoPushToken && Device.isDevice) {
+      sendPushNotification(expoPushToken);
+    }
+  }, [expoPushToken]);
 
   useEffect(() => {
     Animated.timing(animation, {
@@ -126,6 +141,26 @@ function AnimatedSplashScreen({
   );
 }
 
+async function sendPushNotification(expoPushToken: string) {
+  const message = {
+    to: expoPushToken,
+    sound: "default",
+    title: "Original Title",
+    body: "And here is the body!",
+    data: { someData: "goes here" },
+  };
+
+  await fetch("https://exp.host/--/api/v2/push/send", {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Accept-encoding": "gzip, deflate",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(message),
+  });
+}
+
 function AnimatedAppLoader({
   children,
   image,
@@ -135,6 +170,7 @@ function AnimatedAppLoader({
 }) {
   const [user, setUser] = useState<User | null>(null);
   const [isSplashReady, setIsSplashReady] = useState(false);
+  const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
 
   const login = () => {
     return fetch("/login", {

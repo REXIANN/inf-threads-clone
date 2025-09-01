@@ -1,3 +1,4 @@
+import * as Device from "expo-device";
 import "expo-router/entry";
 
 import { faker } from "@faker-js/faker";
@@ -21,7 +22,7 @@ declare global {
 
 let zerocho: User;
 
-if (__DEV__) {
+if (__DEV__ && !Device.isDevice) {
   if (window.server) {
     window.server.shutdown();
   }
