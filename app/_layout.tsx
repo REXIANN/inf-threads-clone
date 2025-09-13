@@ -7,6 +7,7 @@ import { Stack } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
+import * as Updates from "expo-updates";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { Alert, Animated, Linking, StyleSheet, View } from "react-native";
 import Toast, { BaseToast } from "react-native-toast-message";
@@ -64,11 +65,38 @@ function AnimatedSplashScreen({
 
   const animation = useRef(new Animated.Value(1)).current;
 
+  async function onFetchUpdateAsync() {
+    try {
+      if (!__DEV__) {
+        const update = await Updates.checkForUpdateAsync();
+
+        if (update.isAvailable) {
+          await Updates.fetchUpdateAsync();
+          Alert.alert("Update available", "Please update your app", [
+            {
+              text: "Update",
+              onPress: () => Updates.reloadAsync(),
+            },
+            { text: "Cancel", style: "cancel" },
+          ]);
+        }
+      }
+    } catch (error) {
+      console.error(error);
+      // You can also add an alert() to see the error message in case of an error when fetching updates.
+      alert(`Error fetching latest Expo update: ${error}`);
+    }
+  }
+
   const onImageLoaded = async () => {
     try {
-      AsyncStorage.getItem("user").then((user) => {
-        updateUser?.(user ? JSON.parse(user) : null);
-      });
+      await Promise.all([
+        AsyncStorage.getItem("user").then((user) => {
+          updateUser?.(user ? JSON.parse(user) : null);
+        }),
+        onFetchUpdateAsync(),
+        // TODO: validating access token
+      ]);
       await SplashScreen.hideAsync();
       const { status } = await Notifications.requestPermissionsAsync();
       if (status !== "granted") {
